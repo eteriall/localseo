@@ -1,0 +1,11 @@
+node_modules/
+dist/
+localseo-report/
+*.tgz
+coverage/
+.DS_Store
+.env
+.env.*
+.npmrc
+docs/verification-*.md
+scripts/local-corpus.mjs

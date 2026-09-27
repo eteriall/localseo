@@ -1,0 +1,63 @@
+{
+  "name": "localseo",
+  "version": "0.1.0",
+  "description": "Evidence-based predeployment SEO audits for localhost and the web",
+  "type": "module",
+  "license": "MIT",
+  "author": "eteriall",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/eteriall/localseo.git"
+  },
+  "homepage": "https://github.com/eteriall/localseo#readme",
+  "bugs": { "url": "https://github.com/eteriall/localseo/issues" },
+  "keywords": ["seo", "nextjs", "react", "localhost", "audit", "cli", "structured-data"],
+  "publishConfig": { "access": "public", "registry": "https://registry.npmjs.org/" },
+  "engines": {
+    "node": ">=22"
+  },
+  "bin": {
+    "localseo": "dist/cli.js"
+  },
+  "exports": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "data",
+    "docs/rules.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "check": "tsc --noEmit",
+    "dev": "tsx src/cli.ts",
+    "prepack": "npm run build"
+  },
+  "dependencies": {
+    "cheerio": "^1.1.2",
+    "commander": "^14.0.0",
+    "fast-xml-parser": "^5.3.0",
+    "jsonld": "^9.0.0",
+    "microdata-rdf-streaming-parser": "^3.0.0",
+    "n3": "^1.26.0",
+    "playwright": "^1.63.0",
+    "rdfa-streaming-parser": "^3.0.2",
+    "robots-parser": "^3.0.1",
+    "undici": "^7.16.0"
+  },
+  "optionalDependencies": {
+    "lighthouse": "^13.5.0",
+    "chrome-launcher": "^1.2.0",
+    "puppeteer-core": "^25.12.0"
+  },
+  "devDependencies": {
+    "@types/jsonld": "^1.5.15",
+    "@types/n3": "^1.26.0",
+    "@types/node": "^22.18.0",
+    "tsx": "^4.20.0",
+    "typescript": "^5.9.0",
+    "vitest": "^4.1.11"
+  }
+}
