@@ -29,7 +29,9 @@ node dist/cli.js setup
 node dist/cli.js http://localhost:3000 --production-origin https://example.com
 ```
 
-### npm usage (available after the npm release)
+### npm
+
+Published as [localseo on npm](https://www.npmjs.com/package/localseo).
 
 ```bash
 npx localseo setup
