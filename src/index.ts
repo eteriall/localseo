@@ -54,7 +54,7 @@ export async function audit(
   const { headers, ...settings } = o;
   const report: Report = {
     version: "1",
-    toolVersion: "0.1.0",
+    toolVersion: "0.1.1",
     ruleVersion,
     vocabularyVersion,
     startedAt,
@@ -75,7 +75,7 @@ export async function audit(
     lighthouse,
   };
   report.score = seoScore(report.checks, report.coverage.complete);
-  // Preserve structured-data evidence in checks, not full HTML or embedded scripts in reports.
+  // Keep schema check details and remove full HTML and scripts from reports.
   for (const p of report.pages) {
     for (const key of Object.keys(p.headers))
       if (
@@ -88,7 +88,7 @@ export async function audit(
       if (s)
         s.structured = s.structured.map((b) => ({
           ...b,
-          value: `[${b.value.length} characters; validation evidence in checks]`,
+          value: `[${b.value.length} characters; see check details]`,
         }));
   }
   return redact(report, headerSecrets(headers));

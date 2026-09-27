@@ -1,7 +1,7 @@
 {
   "name": "localseo",
-  "version": "0.1.0",
-  "description": "Evidence-based predeployment SEO audits for localhost and the web",
+  "version": "0.1.1",
+  "description": "Check website SEO on localhost before you deploy",
   "type": "module",
   "license": "MIT",
   "author": "eteriall",

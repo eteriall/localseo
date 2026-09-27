@@ -406,7 +406,7 @@ export async function schemaRules(
     const source = `${origins.get(id)}, entity ${id}`;
     const nt = types(n);
     if (!nt.length && Object.keys(n).length === 1) continue;
-    // Schema.org permits multiple values and multilingual labels. Report conflicts as review evidence, never a universal single-value error.
+    // Schema.org allows lists of values and names in several languages. Possible conflicts need review.
     for (const prop of [
       "sku",
       "productGroupID",

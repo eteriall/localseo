@@ -1,15 +1,13 @@
-# Bundled Schema.org data
+# Schema.org data
 
-`vocabulary.json` is a reduced, machine-readable derivative of the Schema.org current HTTPS vocabulary downloaded on 2026-09-27 from:
+localseo includes two files from Schema.org. They were downloaded on 27 September 2026.
 
-https://schema.org/version/latest/schemaorg-current-https.jsonld
+`vocabulary.json` is a smaller version of the [Schema.org vocabulary](https://schema.org/version/latest/schemaorg-current-https.jsonld). It keeps term names, types, parent types, and rules about where fields can be used and what values they can hold. It leaves out the written descriptions.
 
-Its `version` field is the SHA-256 of the original downloaded JSON-LD. It includes term names, kinds, parent types, domains and ranges, without descriptive prose.
+Its `version` field stores the SHA-256 hash of the original file. This is a value used to identify that copy of the file.
 
-`context.json` is the JSON-LD context downloaded on 2026-09-27 from:
+`context.json` comes from the [Schema.org JSON-LD context](https://schema.org/docs/jsonldcontext.jsonld). It helps the tool read schema names in JSON-LD.
 
-https://schema.org/docs/jsonldcontext.jsonld
+These files are based on work by Schema.org. They use the Creative Commons Attribution-ShareAlike 3.0 licence. Read the [Schema.org terms](https://schema.org/docs/terms.html) and the [licence](https://creativecommons.org/licenses/by-sa/3.0/). The MIT licence for localseo's code does not change the licence of these files.
 
-Schema.org vocabulary and documentation are made available under the Creative Commons Attribution-ShareAlike 3.0 license. Attribution: Schema.org. See https://schema.org/docs/terms.html and https://creativecommons.org/licenses/by-sa/3.0/ . The MIT license for localseo source code does not replace this data license.
-
-Rule snapshot: 2026-09-27.4. Google profile requirements were reviewed against the corresponding Search Central documentation linked in each profile. Rule updates require a reviewed package release; scans never silently update rules.
+The check rules are version `2026-09-27.4`. Google rules were checked against the Search Central pages linked in each profile. A scan uses the rules included with the installed package. New rules arrive in a new package release.

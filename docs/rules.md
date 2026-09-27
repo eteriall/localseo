@@ -1,77 +1,183 @@
-# Rule guide
+# Check rules
 
-Rule IDs are included in every result. Presence and heuristic findings are intentionally distinct from confirmed technical errors.
+Each result has a rule ID, such as `title.present`. You can use these IDs to find results or change their level in the settings file.
 
-| Prefix                     | Behavior                                                                                                     |
-| -------------------------- | ------------------------------------------------------------------------------------------------------------ |
-| `http.*`                   | HTTP accessibility, redirect length/loops and HTML applicability                                             |
-| `robots.*`                 | File availability, obvious syntax failures and page blocking                                                 |
-| `sitemap.*`                | XML/root validity, absolute URLs, origin scope, status, directives and canonical consistency                 |
-| `index.*`                  | Effective generic/Googlebot directives and contradictory index/follow directives                             |
-| `title.*`, `description.*` | Presence, multiple declarations and observed cross-page duplicates                                           |
-| `canonical.*`              | Presence, conflicting declarations, URL syntax, public-origin leakage, target status/indexability and loops  |
-| `heading.*`                | Main-heading presence and heading-level jumps, without requiring exactly one H1                              |
-| `html.*`                   | Language, viewport, encoding and meta refresh                                                                |
-| `image.alt`                | Missing alt attributes; empty decorative alt is accepted                                                     |
-| `links.*`                  | Broken/unchecked internal destinations and avoidable redirects                                               |
-| `hreflang.*`               | Language syntax, target access, return links and target canonical consistency                                |
-| `discovery.orphan`         | Sitemap-only candidates, relative to the observed crawl                                                      |
-| `render.*`                 | Browser success/errors; raw-versus-rendered metadata, content, links and JSON-LD; removal of initial noindex |
-| `social.*`                 | Core Open Graph tags, Twitter Card basics, public URLs and local image availability                          |
-| `schema.*`                 | Syntax, context, graph, vocabulary, value formats and relationships                                          |
-| `schema.google.<Type>.*`   | Profile-specific required/recommended fields, conditions, coverage notices and manual review                 |
+Some rules confirm a problem. Others point to something you should review. The report shows the difference. Check details may include a URL, a server response, a page tag or part of the page text.
 
-Target accessibility checks use crawled evidence. A missing target is not automatically broken and is not automatically passed. Expand the crawl or supply a seed to check it. Social images on the configured origin are fetched separately. A sitemap-only page is an orphan candidate, not proof that every possible route lacks a link to it.
+## Page checks
 
-Canonical targets need not equal the audited URL. Production mapping changes where resources are fetched, not what public URLs the site should emit. Sitemap entries should identify canonical indexable pages; a deliberately noindex page can be valid outside a sitemap.
+| Rule group                 | What it checks                                                          |
+| -------------------------- | ----------------------------------------------------------------------- |
+| `http.*`                   | Page responses, redirect chains, redirect loops and HTML file types     |
+| `robots.*`                 | robots.txt, blocked pages and indexing rules                            |
+| `sitemap.*`                | Sitemap format, URLs, dates and page access                             |
+| `index.*`                  | General and Googlebot indexing rules, including rules that conflict     |
+| `title.*`, `description.*` | Missing tags, extra tags and repeated text across pages                 |
+| `canonical.*`              | Canonical links, their targets and loops                                |
+| `heading.*`                | Main headings and gaps between heading levels                           |
+| `html.*`                   | Page language, viewport, text encoding, head structure and meta refresh |
+| `image.alt`                | Missing image alt text                                                  |
+| `links.*`                  | Internal links, redirects, labels and steps needed to reach pages       |
+| `hreflang.*`               | Language tags, linked pages and return links                            |
+| `discovery.orphan`         | Pages found in the sitemap with no known page links                     |
+| `render.*`                 | Browser errors and changes after JavaScript runs                        |
+| `social.*`                 | Sharing tags and images                                                 |
+| `schema.*`                 | Schema format, types, fields and links between items                    |
+| `schema.google.<Type>.*`   | Extra rules for supported Google result types                           |
 
-Render comparisons use the complete server response, not its first streamed chunk. A metadata difference is informational. Browser snapshots are bounded by load, an optional selector, and a settling period; they do not emulate every interaction or Googlebot's rendering service.
+A linked page must be visited before its status can be checked. If it was not visited, the tool leaves the result unclear. You can raise the scan limit or add the URL yourself.
 
-Schema checks use proper JSON-LD expansion with the bundled context and RDF parsers for Microdata/RDFa. Entity references are resolved within each page graph, including cross-script references. External entities are not fetched. Document-level RDF sources identify the format and entity; JSON-LD additionally records script index and line.
+A page found only in a sitemap may have no incoming links. It may also have links on pages outside the scan. Review the result before you call the page an orphan.
 
-Google profiles deliberately retain inconclusive manual findings even when all implemented property checks pass. See README for profile boundaries. A report is a predeployment technical audit, not an indexing guarantee, ranking prediction, or Rich Results Test certificate.
+A canonical link names the preferred URL for a page. It may point to another URL. Sitemaps should list preferred pages that can be indexed. A page with `noindex` can still use its own canonical link, but it should stay out of the sitemap.
 
-## Additional evidence and accuracy rules
+The tool accepts empty alt text for decorative images. It does not treat several H1 headings, short text, or chosen `noindex` tags as errors on their own.
 
-- `page.seo-applicability`: skip page metadata/schema evaluation on unsuccessful responses; keep HTTP and sitemap failures.
-- `render.resources`: failed image/script/style/API requests observed by Chromium; not evaluated in HTTP-only mode.
-- `render.stability`: whether relevant DOM content reached the configured quiet window; failure to settle is inconclusive, not a clean snapshot.
-- `links.labels`: anchor href/label review with bounded markup evidence; intentional controls need review, not an automatic SEO error.
-- `metadata.local-urls`: localhost/preview origin in canonical, hreflang or social URLs when a production origin is supplied.
-- `hreflang.self`, `hreflang.conflicts`: missing self-reference and multiple destinations for the same language tag.
-- `content.duplicate`: identical normalized main-text candidates across successful indexable pages (minimum 200 characters), excluding common page chrome.
-- `social.canonical`: normalized Open Graph URL/canonical disagreement.
-- `sitemap.lastmod`, `sitemap.duplicate`: malformed/future dates and repeated URL entries. A syntactically valid date does not establish real freshness.
-- `http.unknown-route`: opt-in random-path HTTP probe. 404/410 or explicit noindex passes the narrow test; 200 shells, redirects and request failures need further review and are not called confirmed soft 404s.
+## Page and browser details
 
-Robots disallow evidence survives `--ignore-robots`. Canonical chains outside visited coverage are inconclusive. Canonical and alternate destinations enter the bounded crawl instead of silently passing. JSON-LD comparisons ignore whitespace/property-order differences, while preserving array order. A noindexed source page is not rejected for having its own canonical. Google breadcrumb URL values are accepted separately from strict vocabulary ranges, following the [official breadcrumb examples](https://developers.google.com/search/docs/appearance/structured-data/breadcrumb).
+- `page.seo-applicability` skips normal page tags and schema checks on failed page responses. HTTP and sitemap problems still appear.
+- `render.resources` shows image, script, style or API requests that failed in Chromium. It needs browser mode.
+- `render.stability` checks whether page content stopped changing during the set wait time. If it kept changing, the result is unclear.
+- `links.labels` checks link text and href values. It includes a short HTML sample. A link used as a button may need a manual check.
+- `metadata.local-urls` finds local URLs in canonical, language or sharing tags when you have set a public domain.
+- `hreflang.self` checks whether language tags include the current page.
+- `hreflang.conflicts` finds several targets for the same language.
+- `content.duplicate` finds pages with the same main text. It checks successful, indexable pages with at least 200 characters. It leaves out navigation, headers and footers.
+- `social.canonical` compares the Open Graph URL with the canonical URL.
+- `sitemap.lastmod` checks date format and future dates. It cannot prove when a page last changed.
+- `sitemap.duplicate` finds repeated sitemap URLs.
 
-## Extended checks (rule version 2026-09-27.4)
+`--ignore-robots` lets the tool visit blocked pages. The report still shows that robots.txt blocks them.
 
-| Area                      | Rules and evidence                                                                                           | Limits / interpretation                                                                                                                                                                                                 |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Mobile parity             | `mobile.metadata`, `.status`, `.content`, `.links`, `.schema`                                                | Two actual Chromium viewports; content/link differences are heuristics; schema parity compares JSON-LD, not every RDF serialization.                                                                                    |
-| Bot responses / streaming | `bots.google-response`, `bots.raw-parity`, `social.bot-response`, `.bot-parity`                              | Separate Googlebot, Twitterbot and Facebook user-agent HTTP requests; not real authenticated bots. Full streamed response is read.                                                                                      |
-| Lazy content              | `render.lazy-content`, `pagination.interaction`                                                              | Six scroll steps; DOM content already present in collapsed sections is retained. No buttons or forms are activated.                                                                                                     |
-| Resource MIME             | `render.resource-mime`, `render.asset-mime`                                                                  | Browser-observed and explicitly fetched same-origin script, CSS, image, video/embed responses; catches 200 HTML fallbacks.                                                                                              |
-| Resource robots           | `render.resources-robots`, `render.asset-robots`                                                             | Independent Googlebot disallow evidence, including when inspecting with ignore-robots.                                                                                                                                  |
-| Invalid head              | `html.head-structure`                                                                                        | Source positions detect invalid elements before explicit closing head; intentional metadata streamed into body is accepted. This is not a complete HTML validator.                                                      |
-| Soft 404                  | `http.rendered-unknown-route`                                                                                | `--probe404`: two UUID paths, rendered noindex and main-text similarity with real pages; a 200 response alone remains inconclusive.                                                                                     |
-| Fetch size                | `crawl.fetch-size`                                                                                           | Raw decoded HTML size and important elements beyond Google's 2 MB limit. PDF's separate 64 MB limit is not measured by header-only probes.                                                                              |
-| Navigation graph          | `links.navigation-depth`                                                                                     | Shortest link path from audit start URL plus incoming URLs, independent of sitemap depth. Three clicks is a heuristic review threshold, not a Google requirement.                                                       |
-| Build routes              | `routes.manifest`                                                                                            | Optional `--project-dir`: Next pages/app/prerender/routes JSON manifests and `out/**/*.html`, read-only; dynamic templates and API handlers excluded. Missing/stale outputs are unverified; no source/config execution. |
-| Pagination                | `pagination.targets`, `.canonical`, `.interaction`                                                           | Observed next/prev links, unavailable destinations and page>1 canonical review. Does not require rel=next/prev markup.                                                                                                  |
-| Facets / traps            | `crawl.query-traps`                                                                                          | Ten or more observed query variants on one path; bounded heuristic without fetching infinite combinations.                                                                                                              |
-| Near duplicates           | `content.near-duplicate`                                                                                     | Main-text 4-word shingle Jaccard ≥85%, ≥200 chars, length ratio ≥70%; first 250 eligible pages, first 10,000 words. Matching URL/percentage/excerpt evidence; never a score penalty.                                    |
-| Robots + noindex / PDF    | `robots.noindex-blocked`, `robots.non-html`                                                                  | Noindex visibility conflicts; PDF X-Robots-Tag inspection. Missing PDF noindex is not an error: indexing intent needs context.                                                                                          |
-| Snippets                  | `robots.snippet-values`, `.snippet-precedence`                                                               | Valid preview limits, allowed data-nosnippet elements and restrictive-directive overlap. Bot-specific headers are scoped.                                                                                               |
-| Responsive images         | `images.responsive-markup`, `.srcset`, `.browser-decode`, `.asset-decode`, `.pending`, `.background-content` | Fallback, width/density descriptor syntax, all declared candidates within asset budget, selected browser currentSrc, decoding/dimensions and CSS backgrounds. Unloaded/unsupported images remain unverified.            |
-| Schema vs content         | `schema.visible-values`                                                                                      | Price/rating/date/availability values and literal-text evidence; entity association, localization and truthfulness remain manual, even if a literal is found.                                                           |
-| Schema consistency        | `schema.entity-conflict`, `.relationship-type`                                                               | Normalized graph identity/date conflicts and relationship target types across all supported formats. Legitimate multi-values and multilingual labels are not blanket errors.                                            |
-| More profiles             | `schema.google.MerchantListing.candidate`, `.ProductGroup.*`, `.Course.*`, `.VacationRental.*`               | Implemented subsets and eligibility caveats documented in README; no claim of complete rich-result certification.                                                                                                       |
-| Video                     | `video.playback`, `schema.google.VideoObject.page-consistency` plus asset rules                              | HTML video/currentSrc/error/poster, normalized schema thumbnail/content/embed URLs. Autoplay, full playback and external player contents are not certified.                                                             |
-| Social preview            | `social.image-decode`, `.image-shape` and `.image-mime`                                                      | Decoded bytes, dimensions, ratio, bounded local PNG preview in page inspector; no third-party assets loaded by the report and no SEO-score penalty.                                                                     |
+The tool follows canonical and language-link targets within the scan limits. A chain that goes beyond those limits stays unclear. Root URLs that mean the same thing compare as equal.
 
-Authoritative references: [mobile-first indexing](https://developers.google.com/search/docs/crawling-indexing/mobile/mobile-sites-mobile-first-indexing), [valid page metadata](https://developers.google.com/search/docs/crawling-indexing/valid-page-metadata), [lazy loading](https://developers.google.com/search/docs/crawling-indexing/javascript/lazy-loading), [Googlebot fetch limits](https://developers.google.com/search/docs/crawling-indexing/googlebot), [robots directives](https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag), [pagination](https://developers.google.com/search/docs/specialty/ecommerce/pagination-and-incremental-page-loading), [images](https://developers.google.com/search/docs/appearance/google-images), [structured-data policies](https://developers.google.com/search/docs/appearance/structured-data/sd-policies), [merchant listings](https://developers.google.com/search/docs/appearance/structured-data/merchant-listing), [product variants](https://developers.google.com/search/docs/appearance/structured-data/product-variants), [course lists](https://developers.google.com/search/docs/appearance/structured-data/course), [vacation rentals](https://developers.google.com/search/docs/appearance/structured-data/vacation-rental).
+Browser comparisons read the full server response, including streamed HTML. They then compare it with the page after JavaScript runs. These checks wait only for the set time and chosen page element. They cannot try every action a visitor might take.
 
-Remaining boundaries: no authentic Googlebot/IP simulation, full rich-result eligibility certification, source-file/line attribution outside structured-data blocks, or production indexing validation. All checks are bounded by local evidence; limits and inconclusive results are explicit. The technical score excludes review heuristics and sharing previews; see README for its exact formula.
+JSON-LD comparisons ignore spaces and field order. They keep array order.
+
+## Mobile pages and bot responses
+
+`mobile.metadata` and `mobile.status` compare page tags and HTTP status on desktop and mobile. `mobile.content` and `mobile.links` compare main text and links. Text or link changes are review notes because mobile menus and changing content can cause valid differences.
+
+`mobile.schema` compares JSON-LD. It does not compare all Microdata or RDFa forms.
+
+`bots.google-response` checks the response to a Googlebot user-agent name. `bots.raw-parity` shows changes from the normal server HTML. `bots.raw-metadata` notes tags that may need JavaScript. Missing tags in server HTML alone do not prove that Google cannot read them.
+
+`social.bot-response` and `social.bot-parity` check Twitterbot and Facebook responses. All bot checks read the full response. These requests come from localseo, not from the real bots.
+
+Read Google's [mobile page guide](https://developers.google.com/search/docs/crawling-indexing/mobile/mobile-sites-mobile-first-indexing).
+
+## Content that loads later
+
+`render.lazy-content` compares the page before and after six scroll steps. Text already in the DOM, such as a closed section, is kept in the first view.
+
+`pagination.interaction` looks for buttons such as "Load more". The tool does not click them or submit forms. Check whether this content also has normal links that a crawler can follow.
+
+Read Google's [lazy-loading guide](https://developers.google.com/search/docs/crawling-indexing/javascript/lazy-loading).
+
+## File types and robots rules
+
+`render.resource-mime` checks file types seen by the browser. `render.asset-mime` fetches local files and checks their status and type. For example, a server may return status 200 but send HTML for a JavaScript file.
+
+`render.resources-robots` and `render.asset-robots` show files blocked for Googlebot. They keep this information even with `--ignore-robots`.
+
+Extra file checks stay on the same site and use the file limit. Files on other sites are left unchecked.
+
+## Head structure and response size
+
+`html.head-structure` finds invalid elements before the closing head tag in the source HTML. It allows Next.js tags sent later in the body. It checks this part of the page, not every HTML rule.
+
+`crawl.fetch-size` checks the size of the HTML after decoding. It flags HTML over Googlebot's 2 MB limit and looks for important tags beyond that point. The separate 64 MB PDF limit is not measured, because the PDF body is not downloaded.
+
+Read Google's guides to [valid page metadata](https://developers.google.com/search/docs/crawling-indexing/valid-page-metadata) and [Googlebot file limits](https://developers.google.com/search/docs/crawling-indexing/googlebot).
+
+## Missing pages
+
+With `--probe404`, `http.unknown-route` requests one made-up path. A 404 or 410 response, or a page with noindex, passes this check. A 200 page, redirect or request error needs more review.
+
+With extra checks on, `http.rendered-unknown-route` tests two more made-up paths. It checks the browser page for noindex and compares its main text with real pages.
+
+A 200 response for a missing page may be a soft 404. Google's final choice cannot be tested locally.
+
+## Links and numbered pages
+
+`links.navigation-depth` finds the shortest known link path from the start URL. It also lists incoming links. This is separate from the depth used to discover sitemap pages. More than three clicks is a review point, not a Google limit.
+
+`pagination.targets` checks visited next and previous page links. `pagination.canonical` looks for later numbered pages that point to another canonical URL. Different result pages usually need their own URLs. Review pages that are true copies before making a change.
+
+The tool does not require `rel=next` or `rel=prev`. Read Google's [numbered-page guide](https://developers.google.com/search/docs/specialty/ecommerce/pagination-and-incremental-page-loading).
+
+`crawl.query-traps` flags ten or more query variants for one path. Filter menus can create very large groups of URLs. This rule uses links already found and does not fetch every possible combination.
+
+## Build routes
+
+Use `--project-dir` for `routes.manifest`. It compares scanned pages with these files:
+
+- Next.js pages, app paths, prerender and routes JSON files.
+- Static HTML pages in `out/**/*.html`.
+
+The tool only reads these files. It does not run the project's source or settings code. API handlers and dynamic route templates are left out. Add real URLs for dynamic pages with `--urls`.
+
+Build files may be old. A route missing from the scan is left unclear until you check it.
+
+## Similar text
+
+`content.near-duplicate` looks for very similar main text on indexable pages. It compares groups of four words with the Jaccard method: shared groups divided by all different groups.
+
+The rule uses at least 85% similarity. Both texts need at least 200 characters, and the shorter text must be at least 70% as long as the other.
+
+It compares the first 250 pages that meet these rules and the first 10,000 words of each text. The report shows matching URLs, a percentage and a short text sample. These results need review and do not lower the score. Reaching the page limit adds a note.
+
+## Indexing and search snippets
+
+`robots.noindex-blocked` finds a page with noindex that robots.txt also blocks. A crawler needs access to the page to read its noindex tag.
+
+`robots.non-html` reads X-Robots-Tag on PDF responses. A PDF does not need noindex unless you want to keep it out of search. HTML meta tags do not control PDF indexing.
+
+`robots.snippet-values` checks preview limits and the HTML elements allowed to use data-nosnippet. `robots.snippet-precedence` points out rules that overlap. Google follows the more restrictive rule.
+
+Headers meant for another bot are kept separate from Googlebot rules. Read Google's [robots tag guide](https://developers.google.com/search/docs/crawling-indexing/robots-meta-tag).
+
+## Images
+
+`images.responsive-markup` checks the img fallback URL, sizes and width/height values. `images.srcset` checks the list of image choices and their size values.
+
+`images.browser-decode` checks images loaded by the browser. `images.asset-decode` checks downloaded image data and reads its dimensions. Declared image choices and the browser's chosen currentSrc are checked within the file limit.
+
+`images.pending` lists images still waiting to load. `images.background-content` lists CSS background images for review. Decorative backgrounds are fine. Important images may need an img element with alt text.
+
+Unsupported images and files that did not load stay unchecked. Read Google's [image guide](https://developers.google.com/search/docs/appearance/google-images).
+
+## Schema checks
+
+JSON-LD, Microdata and RDFa are read into a shared item format. This lets the tool check types, fields and links between items. It can follow references across blocks on the same page. It does not fetch items from other sites.
+
+Results show the data format and item ID. JSON-LD results also show the script number and line. General Schema.org field and type mismatches are warnings because the vocabulary allows flexible use.
+
+`schema.visible-values` compares prices, ratings, dates and stock details with page text. A matching number may belong to a different item. Dates and prices may also use a local format. These results need manual review even when the text matches.
+
+`schema.entity-conflict` shows several values that may conflict for one item. Several names in different languages, or other valid lists of values, are allowed. `schema.relationship-type` checks the type of an item used in a link, such as an author or a product group.
+
+Google checks cover required and suggested fields for the types listed in the README. Passing these fields does not complete the manual checks. The tool cannot confirm truth, image relevance or Google's final decision.
+
+`schema.google.MerchantListing.candidate` checks image, active price and currency. It is an info check because some product pages do not sell the product.
+
+`schema.google.ProductGroup.*` checks group IDs and supported product options. `schema.google.Course.*` checks course fields and some list rules. `schema.google.VacationRental.*` checks guest counts, images and location values. The README explains which parts still need review.
+
+Google breadcrumb URL values are accepted using the [official examples](https://developers.google.com/search/docs/appearance/structured-data/breadcrumb).
+
+Source guides: [schema rules](https://developers.google.com/search/docs/appearance/structured-data/sd-policies), [merchant listings](https://developers.google.com/search/docs/appearance/structured-data/merchant-listing), [product options](https://developers.google.com/search/docs/appearance/structured-data/product-variants), [course lists](https://developers.google.com/search/docs/appearance/structured-data/course), and [holiday rentals](https://developers.google.com/search/docs/appearance/structured-data/vacation-rental).
+
+## Video and sharing images
+
+`video.playback` reads the HTML video URL, load errors and poster image. `schema.google.VideoObject.page-consistency` compares video schema URLs with the page. File checks also use schema thumbnail, content and embed URLs.
+
+The tool cannot confirm full playback, autoplay or the contents of outside video players.
+
+`social.image-decode`, `social.image-shape` and `social.image-mime` check social image data, file type, dimensions and shape. The page view can show a small local PNG preview. Sharing checks do not affect the SEO Score.
+
+## Limits
+
+These rules are version `2026-09-27.4`. The scan can only judge the pages and files it can reach within your limits. Unclear and skipped results are shown in the report.
+
+The tool does not check live Google indexing or act as a real Googlebot. Source-file line numbers are only given for supported schema blocks. Google's full rich-result rules still need further review. See the README for the score formula and scan settings.

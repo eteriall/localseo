@@ -1,6 +1,6 @@
 import type { Report } from "./types.js";
 
-/** Compare actionable checks by rule, public URL and evidence source, ignoring preview ports. */
+/** Compare failed checks by rule, public URL and source, ignoring preview ports. */
 export function compareReports(
   current: Report,
   baseline: Report,

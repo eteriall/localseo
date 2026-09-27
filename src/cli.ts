@@ -11,8 +11,8 @@ import { redact, headerSecrets } from "./report.js";
 import type { Options } from "./types.js";
 const program = new Command()
   .name("localseo")
-  .description("Evidence-based predeployment SEO audits")
-  .version("0.1.0");
+  .description("Check website SEO before you deploy")
+  .version("0.1.1");
 program
   .command("setup")
   .description("Install the Chromium browser used for rendering and Lighthouse")
